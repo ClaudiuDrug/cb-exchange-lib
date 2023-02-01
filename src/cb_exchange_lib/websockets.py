@@ -11,7 +11,6 @@ from .constants import MARKET_DATA, DIRECT_MARKET_DATA
 from .utils import WSQueue
 
 
-# noinspection PyUnusedLocal
 class MarketData(object):
     """Websocket client session handler."""
 

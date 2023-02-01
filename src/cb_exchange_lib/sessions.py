@@ -23,7 +23,6 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         return super(TimeoutHTTPAdapter, self).send(request, **kwargs)
 
 
-# noinspection HttpUrlsUsage
 class BaseSession(Session):
     """Base `Session` handler."""
 
@@ -97,7 +96,6 @@ class BaseSession(Session):
         if debug is True:
             self.hooks["response"] = [self.debug]
 
-    # noinspection PyUnusedLocal
     def debug(self, response: Response, *args, **kwargs):
         data = dump.dump_all(response)
         self._log.debug(
