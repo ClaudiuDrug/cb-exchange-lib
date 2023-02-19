@@ -5,9 +5,8 @@ from json import JSONDecodeError
 from typing import Union, List, Dict
 
 from requests import Response, HTTPError
-from requests_cache import install_cache
 
-from .constants import EXCHANGE, ENDPOINTS, ENVIRONMENT, CACHE
+from .constants import EXCHANGE, ENDPOINTS, ENVIRONMENT
 from .sessions import BaseSession, AuthSession
 
 
@@ -27,15 +26,11 @@ class Exchange(ABC):
             url = f"{url}?{'&'.join(f'{key}={value}' for key, value in kwargs.items())}"
         return url
 
-    def __init__(self, environment: str, cache: str):
+    def __init__(self, environment: str):
         """
         :param environment: The API environment (`production` or `sandbox`).
-        :param cache: The path to be used for caching.
         """
         self._url: str = f"https://{EXCHANGE.get(environment)}"
-
-        if cache is not None:
-            install_cache(cache_name=cache, backend="sqlite", expire_after=180)
 
     def __enter__(self):
         return self
@@ -102,24 +97,23 @@ class Endpoint(Exchange):
 
     def __init__(self, **kwargs):
         """
-        **kwargs**:
-        - ``environment``: The API environment: `production` or `sandbox`
-          (defaults to: `production`).
-        - ``cache``: The path to be used for caching.
-        - ``retries``: Total number of retries to allow (defaults to: 3);
-        - ``backoff``: A backoff factor to apply between attempts after the
-          second try (defaults to: 1);
-        - ``timeout``: How long to wait for the server to send data before
-          giving up (defaults to: 30);
-        - ``debug``: bool - Set to True to log all requests/responses to/from server
-          (defaults to: `False`).
-        - ``logger``: Logger - The handler to be used for logging.
-
-        :param kwargs: Additional keyword arguments.
+        **Parameters**:
+            - ``environment``: The API environment: `production` or `sandbox`
+              (defaults to: `production`);
+            - ``retries``: Total number of retries to allow (defaults to: 3);
+            - ``backoff``: A backoff factor to apply between attempts after the
+              second try (defaults to: 1);
+            - ``timeout``: How long to wait for the server to send data before
+              giving up (defaults to: 30);
+            - ``cache``: Use caching (defaults to: `True`);
+            - ``debug``: bool - Set to True to log all requests/responses
+              to/from server (defaults to: `False`);
+            - ``logger``: Logger - The handler to be used for logging.
+              If given, and level is above `DEBUG`, all debug messages will be
+              ignored.
         """
         super(Endpoint, self).__init__(
-            environment=kwargs.pop("environment", ENVIRONMENT),
-            cache=kwargs.pop("cache", CACHE),
+            environment=kwargs.pop("environment", ENVIRONMENT)
         )
         self._session = BaseSession(**kwargs)
 
@@ -129,27 +123,26 @@ class AuthEndpoint(Exchange):
 
     def __init__(self, key: str, passphrase: str, secret: str, **kwargs):
         """
-        **kwargs**:
+        **Parameters**:
+            - ``key``: The API key;
+            - ``passphrase``: The API passphrase;
+            - ``secret``: The API secret;
             - ``environment``: The API environment: `production` or `sandbox`
-              (defaults to: `production`).
-            - ``cache``: The path to be used for caching.
+              (defaults to: `production`);
             - ``retries``: Total number of retries to allow (defaults to: 3);
             - ``backoff``: A backoff factor to apply between attempts after the
               second try (defaults to: 1);
             - ``timeout``: How long to wait for the server to send data before
               giving up (defaults to: 30);
-            - ``debug``: bool - Set to True to log all requests/responses to/from server
-              (defaults to: `False`).
+            - ``cache``: Use caching (defaults to: `True`);
+            - ``debug``: bool - Set to True to log all requests/responses
+              to/from server (defaults to: `False`);
             - ``logger``: Logger - The handler to be used for logging.
-
-        :param key: The API key;
-        :param passphrase: The API passphrase;
-        :param secret: The API secret;
-        :param kwargs: Additional keyword arguments.
+              If given, and level is above `DEBUG`, all debug messages will be
+              ignored.
         """
         super(AuthEndpoint, self).__init__(
-            environment=kwargs.pop("environment", ENVIRONMENT),
-            cache=kwargs.pop("cache", CACHE),
+            environment=kwargs.pop("environment", ENVIRONMENT)
         )
         self._session = AuthSession(key, passphrase, secret, **kwargs)
 

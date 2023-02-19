@@ -1,13 +1,15 @@
 # -*- coding: UTF-8 -*-
 
-from logging import getLogger, Logger, StreamHandler, Formatter, DEBUG
+from logging import getLogger, Logger, StreamHandler, Formatter, DEBUG, INFO
 
 from requests import Session, Response
 from requests.adapters import HTTPAdapter
+from requests_cache import install_cache
 from requests_toolbelt.utils import dump
 from urllib3.util.retry import Retry
 
 from .authentication import SessionAuth
+from .constants import CACHE
 from .utils import decode
 
 
@@ -28,11 +30,11 @@ class BaseSession(Session):
 
     # create a logger and set level to debug:
     _log: Logger = getLogger(__name__)
-    _log.setLevel(DEBUG)
+    _log.setLevel(INFO)
 
     # create console handler and set level to debug:
     _console = StreamHandler()
-    _console.setLevel(DEBUG)
+    _console.setLevel(INFO)
 
     # create formatter:
     _formatter = Formatter(
@@ -45,11 +47,22 @@ class BaseSession(Session):
     # add console to logger:
     _log.addHandler(_console)
 
+    @staticmethod
+    def timeout_http_adapter(retries: int, backoff: int, timeout: int) -> TimeoutHTTPAdapter:
+        return TimeoutHTTPAdapter(
+            max_retries=Retry(
+                total=retries,
+                backoff_factor=backoff
+            ),
+            timeout=timeout
+        )
+
     def __init__(
             self,
             retries: int = 3,
             backoff: int = 1,
             timeout: int = 30,
+            cache: bool = True,
             debug: bool = False,
             logger: Logger = None
     ):
@@ -59,9 +72,11 @@ class BaseSession(Session):
             second try (defaults to: 1).
         :param timeout: How long to wait for the server to send data before
             giving up (defaults to: 30).
+        :param cache: Use caching (defaults to: `True`);
         :param debug: Set to True to log all requests/responses to/from server
             (defaults to: `False`).
-        :param logger: The handler to be used for logging.
+        :param logger: The handler to be used for logging. If given, and level
+            is above `DEBUG`, all debug messages will be ignored.
         """
 
         super(BaseSession, self).__init__()
@@ -76,25 +91,25 @@ class BaseSession(Session):
 
         self.mount(
             "http://",
-            TimeoutHTTPAdapter(
-                max_retries=Retry(total=retries, backoff_factor=backoff),
-                timeout=timeout
-            )
+            self.timeout_http_adapter(retries, backoff, timeout)
         )
 
         self.mount(
             "https://",
-            TimeoutHTTPAdapter(
-                max_retries=Retry(total=retries, backoff_factor=backoff),
-                timeout=timeout
-            )
+            self.timeout_http_adapter(retries, backoff, timeout)
         )
+
+        self.hooks["response"] = [self.debug]
+
+        if cache is True:
+            install_cache(cache_name=CACHE, backend="sqlite", expire_after=180)
+
+        if debug is True:
+            self._log.setLevel(DEBUG)
+            self._console.setLevel(DEBUG)
 
         if logger is not None:
             self._log = logger
-
-        if debug is True:
-            self.hooks["response"] = [self.debug]
 
     def debug(self, response: Response, *args, **kwargs):
         data = dump.dump_all(response)
@@ -108,20 +123,21 @@ class AuthSession(BaseSession):
 
     def __init__(self, key: str, passphrase: str, secret: str, **kwargs):
         """
-        **kwargs**:
+        **Parameters**:
+            - ``key``: The API key;
+            - ``passphrase``: The API passphrase;
+            - ``secret``: The API secret;
             - ``retries``: Total number of retries to allow (defaults to: 3);
             - ``backoff``: A backoff factor to apply between attempts after the
               second try (defaults to: 1);
             - ``timeout``: How long to wait for the server to send data before
               giving up (defaults to: 30);
-            - ``debug``: bool - Set to True to log all requests/responses to/from server
-              (defaults to: `False`).
+            - ``cache``: Use caching (defaults to: `True`);
+            - ``debug``: bool - Set to True to log all requests/responses
+              to/from server (defaults to: `False`);
             - ``logger``: Logger - The handler to be used for logging.
-
-        :param key: The API key;
-        :param passphrase: The API passphrase;
-        :param secret: The API secret;
-        :param kwargs: Additional keyword arguments.
+              If given, and level is above `DEBUG`, all debug messages will be
+              ignored.
         """
         super(AuthSession, self).__init__(**kwargs)
         self.auth = SessionAuth(key, passphrase, secret)

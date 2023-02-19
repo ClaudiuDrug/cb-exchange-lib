@@ -33,6 +33,12 @@ def decode(value: Union[bytes, str], encoding: str = "UTF-8") -> str:
     return value
 
 
+def as_list(value: Union[str, dict, list]) -> list:
+    if isinstance(value, (str, dict)):
+        return [value]
+    return value
+
+
 class WSQueue(Queue):
     SENTINEL = object()
 
@@ -55,5 +61,6 @@ __all__ = [
     "get_posix",
     "encode",
     "decode",
+    "as_list",
     "WSQueue",
 ]

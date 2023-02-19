@@ -43,12 +43,13 @@ python -m pip install [--upgrade] cb_exchange_lib
 
 **Any endpoint can take these keyword arguments:**
 * `environment`: str - The API environment: `production` or `sandbox` (defaults to: `production`);
-* `cache`: str - The path to be used for caching;
 * `retries`: int - Total number of retries to allow (defaults to: `3`);
 * `backoff`: int - A backoff factor to apply between attempts after the second try (defaults to: `1`);
 * `timeout`: int - How long to wait for the server to send data before giving up (defaults to: `30`);
+* `cache`: bool - Use caching (defaults to: `True`);
 * `debug`: bool - Set to True to log all requests/responses to/from server (defaults to: `False`);
-* `logger`: Logger - The handler to be used for logging.
+* `logger`: Logger - The handler to be used for logging. If given, and level is above `DEBUG`,
+  all debug messages will be ignored.
 
 **For private endpoints only:**
 * `key`: str - The API key;
@@ -530,17 +531,17 @@ All the parameters these resources can take are described in the official docume
 ### Websocket clients:
 
 **Any of the websocket clients can take these keyword arguments:**
+* `channels`: The channels for subscription;
+* `product_ids`: The products IDs for subscription;
 * `environment`: The API environment: `production` or `sandbox` (defaults to: `production`);
 * `debug`: Set to True to log all requests/responses to/from server (defaults to: `False`);
-* `logger`: The handler to be used for logging;
-* `kwargs`: Websocket subscription parameters.
-  * `channels`: list
-  * `product_ids`: list
-  
-  > **Note:**
-  > 
-  > For information about Websocket feed channels visit the
-  > [documentation](https://docs.cloud.coinbase.com/exchange/docs/websocket-channels).
+* `logger`: The handler to be used for logging; If given, and level is above `DEBUG`,
+  all debug messages will be ignored.
+
+> **Note:**
+> 
+> For information about Websocket feed channels visit the
+> [documentation](https://docs.cloud.coinbase.com/exchange/docs/websocket-channels).
 
 **For `DirectMarketData` only:**
 * `key`: The API key;
