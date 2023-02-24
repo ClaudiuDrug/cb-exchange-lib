@@ -57,6 +57,13 @@ class BaseSession(Session):
             timeout=timeout
         )
 
+    @staticmethod
+    def extract_data(response: Response) -> str:
+        return decode(
+            dump.dump_all(response),
+            encoding="UTF-8"
+        )
+
     def __init__(
             self,
             retries: int = 3,
@@ -79,6 +86,9 @@ class BaseSession(Session):
             is above `DEBUG`, all debug messages will be ignored.
         """
 
+        if cache is True:
+            install_cache(cache_name=CACHE, backend="sqlite", expire_after=180)
+
         super(BaseSession, self).__init__()
 
         self.headers.update(
@@ -99,12 +109,8 @@ class BaseSession(Session):
             self.timeout_http_adapter(retries, backoff, timeout)
         )
 
-        self.hooks["response"] = [self.debug]
-
-        if cache is True:
-            install_cache(cache_name=CACHE, backend="sqlite", expire_after=180)
-
         if debug is True:
+            self.hooks["response"] = [self.debug]
             self._log.setLevel(DEBUG)
             self._console.setLevel(DEBUG)
 
@@ -112,9 +118,8 @@ class BaseSession(Session):
             self._log = logger
 
     def debug(self, response: Response, *args, **kwargs):
-        data = dump.dump_all(response)
         self._log.debug(
-            decode(data, encoding="UTF-8")
+            msg=self.extract_data(response)
         )
 
 
