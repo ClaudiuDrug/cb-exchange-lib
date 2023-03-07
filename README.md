@@ -1,4 +1,4 @@
-# cb_exchange_lib
+# cb-exchange-lib
 
 Coinbase Exchange API client library.
 
@@ -7,7 +7,7 @@ Coinbase Exchange API client library.
 ### Installation:
 
 ```commandline
-python -m pip install [--upgrade] cb_exchange_lib
+python -m pip install [--upgrade] cb-exchange-lib
 ```
 
 ---
